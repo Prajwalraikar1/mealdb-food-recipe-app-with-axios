@@ -1,35 +1,47 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = "mealdb-app"
+        CONTAINER_NAME = "mealdb-container"
+    }
+
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                git 'https://github.com/Prajwalraikar1/mealdb-food-recipe-app-with-axios.git'
-            }
-        }
-        
-        stage('Install Dependencies') {
-            steps {
-                sh 'npm install'
+                git branch: 'main', url: 'https://github.com/Prajwalraikar1/mealdb-food-recipe-app-with-axios.git'
             }
         }
 
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                sh 'npm run build'
+                script {
+                    sh 'docker build -t ${IMAGE_NAME} .'
+                }
+            }
+        }
+
+        stage('Run Container') {
+            steps {
+                script {
+                    sh 'docker run -d --name ${CONTAINER_NAME} -p 3000:3000 ${IMAGE_NAME}'
+                }
             }
         }
 
         stage('Test') {
             steps {
-                sh 'npm test'  // Add test cases if any
+                script {
+                    sh 'docker ps | grep ${CONTAINER_NAME}'
+                }
             }
         }
 
-        stage('Deploy') {
+        stage('Cleanup') {
             steps {
-                echo 'Deploying application...'
-                // Add deployment commands if needed
+                script {
+                    sh 'docker rm -f ${CONTAINER_NAME}'
+                }
             }
         }
     }
